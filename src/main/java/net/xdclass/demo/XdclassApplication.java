@@ -31,7 +31,7 @@ public class XdclassApplication {
 
     @Bean
     public MultipartConfigElement multipartConfigElement() {
-		111111
+
         MultipartConfigFactory factory = new MultipartConfigFactory();
         //单个文件最大
         factory.setMaxFileSize("10240000000KB"); //KB,MB
