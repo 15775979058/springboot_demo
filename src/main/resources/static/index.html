@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Insert title here</title>
+</head>
+<style>
+    video::-internal-media-controls-download-button {
+        display: none;
+    }
+</style>
+<body>
+<h1>static hkctp.com.hk</h1>
+
+<video id="sound" width="500" height="300" controlsList="nodownload" controls="controls"></video>
+
+
+原始视频：
+<video id="sound_url" width="500" height="300" controlsList="nodownload" controls="controls" src="http://47.106.183.16:8080/20181115/64c69b1d-bfea-48b3-8fc4-12ffb39e1a8d.mp4"></video>
+
+
+
+<script type="text/javascript">
+    //创建XMLHttpRequest对象
+    var xhr = new XMLHttpRequest();
+    //配置请求方式、请求地址以及是否同步
+    xhr.open('POST', '/play', true);
+    //设置请求结果类型为blob
+    xhr.responseType = 'blob';
+    //请求成功回调函数
+    xhr.onload = function (e) {
+        console.log(e);
+        if (this.status == 200) {//请求成功
+
+            //获取blob对象
+            var blob = this.response;
+        console.log(1);
+            //获取blob对象地址，并把值赋给容器
+            document.getElementById('sound').src=URL.createObjectURL(blob);
+        console.log(2);
+        }
+    };
+    xhr.send();
+</script>
+
+</body>
+</html>

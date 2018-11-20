@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>uploadimg.html</title>
+
+    <meta name="keywords" content="keyword1,keyword2,keyword3"></meta>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      <!-- 上传 -->
+      <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+      <link href="http://cdn.bootcss.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <script src="/js/test.js" type="text/javascript"></script>
+      <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js">
+      </script>
+      <!-- import Vue before Element -->
+      <script src="https://unpkg.com/vue@2.5.17/dist/vue.js"></script>
+      <!-- import JavaScript -->
+      <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+      <script type="text/javascript" src="https://res.wx.qq.com/open/js/jweixin-1.3.2.js"></script>
+  </head>
+
+  <body>
+  <div id="app">
+	  <form enctype="multipart/form-data" method="post" action="http://47.106.183.16:8080/upload">
+	    文件:<input type="file" name="head_img"/>
+	    姓名:<input type="text" name="name"/>
+	    <input type="submit" value="上传"/>
+	   </form>
+      <p>ajax测试!</p>
+      <div>
+          <el-row>
+              <el-col :span="18" style="    margin-left: 30px;">
+                  <div class="grid-content bg-purple-light">
+                      <label class="layui-form-label">打印文件上传<span class="must_fill">*</span></label>
+                      <div class="rightupload">
+                          <el-upload
+                                  class="upload-demo"
+                                  ref="upload"
+                                  action="http://47.106.183.16:8080/upload"
+                                  name="head_img"
+                                  :before-upload="beforePrintUpload"
+                                  :on-success="handlePrintSuccess"
+                                  :on-preview="handlePreview"
+                                  :on-remove="handlePrintRemove"
+                                  :file-list="fileList"
+                                  :auto-upload="true">
+                              <el-button slot="trigger" size="small" type="primary">选取文件</el-button>
+
+                          </el-upload>
+                      </div>
+                  </div>
+              </el-col>
+          </el-row>
+      </div>
+  </div>
+  </body>
+  <script>
+      var app = new Vue({
+          el:"#app",
+          data(){
+              return{
+                  isOrder:false,
+                  priceId: 0,
+                  money: 0,
+                  cutImgList:[],
+                  fileList: [ ]
+              }
+          },
+          mounted(){
+
+          },
+          methods:{
+              handlePreview(file){
+
+              },
+              //目录截图上传之前
+              beforePrintUpload(file){
+                  const isPDF = file.type === 'application/pdf';
+                  if(!isPDF){
+                      this.$message.error('上传头像图片只能是 PDF 格式!');
+                      return false
+                  }
+
+                  if(this.cutImgList.length > 0 ){
+                      this.$message.error('不好意思，只能上传1个pdf文件');
+                      return false
+                  }
+
+                  return isPDF;
+              },
+              //目录截图成功
+              handlePrintSuccess(response, file, fileList){
+                  if(response.msg == '上传文件后缀不允许'){
+                      this.$message.error('只能上传1个pdf文件,请上传正确的文件格式');
+                      return false;
+                  }else{
+                      this.cutImgList.push(response.msg);
+                  }
+
+              },
+              //删除目录截图
+              handlePrintRemove(file, fileList) {
+                  var fileImgUrl = file.response.msg;
+                  this.cutImgList.forEach(function(item,index,arr){
+                      console.log(arr[index])
+                      if(fileImgUrl == arr[index]){
+                          app.cutImgList.splice(index,1);
+                          return app.cutImgList
+                      }
+                  })
+                  console.log(this.cutImgList)
+              },
+              submitUpload() {
+                  this.$refs.upload.submit();
+              },
+
+              get_money(){
+
+                  var print_type = $('#print_type').val();
+                  var paper_size = $('#paper_size').val();
+                  var print_side = $('#print_side').val();
+                  var cutImgList = app.cutImgList;
+
+                  if(cutImgList.length == 0){
+                      alert('请上传打印文件！');
+                      return;
+                  }
+
+
+
+                  $.post("{:url('funGetMoney')}",{print_type:print_type,paper_size:paper_size,print_side:print_side,cutImgList:cutImgList},function(res){
+                      var res = JSON.parse(res);
+                      if(res.status == 1){
+                          $('#price').html('价格：'+res.msg+'(元)');
+                          app.isOrder = true;
+                          app.priceId = res.priceId;
+                          app.money = res.msg;
+                          return;
+                      }else{
+                          alert(res.msg);
+                          return;
+                      }
+                  });
+              },
+
+              submit_form(){
+
+                  var priceId = app.priceId;
+                  var money = app.money;
+                  var cutImgList = app.cutImgList;
+
+                  if(priceId == ''){
+                      alert('请提交价格信息！');
+                      return;
+                  }
+                  if(money == ''){
+                      alert('请提交订单金额！');
+                      return;
+                  }
+
+                  $.post("{:url('funSubmitOrder')}",{openId:"<?php echo $openid; ?>",priceId:priceId,money:money,cutImgList:cutImgList},function(res){
+                      var res = JSON.parse(res);
+                      if(res.status == 1){
+                          alert(res.msg);
+                          wx.miniProgram.switchTab({
+                              url:'/pages/index/index',
+                              success: function(){
+                                  console.log('success')
+                              },
+                              fail: function(){
+                                  console.log('fail');
+                              },
+                              complete:function(){
+                                  console.log('complete');
+                              }
+                          });
+                          return;
+                      }else{
+                          alert(res.msg);
+                          return;
+                      }
+                  })
+
+              },
+
+              back_program(){
+                  console.log(1);
+              }
+          }
+      })
+
+  </script>
+  <script>
+
+      $(document).ready(function(){
+          $("p").click(function(){
+             $.post("http://47.106.183.16:8080/uploadVideoSubmit",{video_url:"dddd",part_in_month:201902,video_title:"限与翻身",introduce:"dddd",equipment:"相机",location:"伦敦"},function(res){
+                console.log('ok');
+             })
+          });
+      });
+  </script>
+</html>
